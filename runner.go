@@ -3,7 +3,7 @@ package behaviours
 import (
 	"net/http"
 
-	"github.com/mitchellh/go-testing-interface"
+	tester "github.com/mitchellh/go-testing-interface"
 )
 
 // Runner is an interface that "makes" a Request.
@@ -18,18 +18,20 @@ type Runner interface {
 // Behaviour's RequestFunc. This allows a chain of Requests to
 // be programmatically created, and each Request can use information
 // returned in the previous Response.
-func Run(t testing.T, r Runner, bs []Behaviour) {
+func Run(t tester.T, r Runner, bs []Behaviour) {
 	var resp *http.Response
 	for _, b := range bs {
-		t.Logf("Running behaviour %q", b.Description)
-		req, err := b.RequestFunc(resp)
+		behaviour := b.GetDescription()
+		t.Logf("Running behaviour %q", behaviour)
+		req, err := b.GetRequest(resp)
 		if err != nil {
-			t.Fatalf("Error running behaviour %q: %s", b.Description, err)
+			t.Fatalf("Error running behaviour %q: %s", behaviour, err)
 		}
 		resp, err = r.Do(req)
-		checkErr := b.CheckFunc(resp, err)
+		checkErr := b.CheckResponse(resp, err)
 		if checkErr != nil {
-			t.Fatalf("Error checking behaviour %q: %s", b.Description, err)
+			t.Fatalf("Error checking behaviour %q: %s", behaviour, err)
 		}
+		t.Logf("Ran behaviour %q", behaviour)
 	}
 }
